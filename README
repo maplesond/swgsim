@@ -1,3 +1,8 @@
+What's New
+==========
+
+The quality score is now configurable using the -Q command line flag.
+
 Introduction
 ============
 

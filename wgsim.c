@@ -226,7 +226,7 @@ void wgsim_print_mutref(const char *name, const kseq_t *ks, mutseq_t *hap1, muts
 	}
 }
 
-void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t N, int dist, int std_dev, int size_l, int size_r)
+void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t N, int dist, int std_dev, int size_l, int size_r, char Q)
 {
 	kseq_t *ks;
     mutseq_t rseq[2];
@@ -234,7 +234,7 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 	uint64_t tot_len, ii;
 	int i, l, n_ref;
 	char *qstr;
-	int size[2], Q, max_size;
+	int size[2], max_size;
 	uint8_t *tmp_seq[2];
     mut_t *target;
 
@@ -244,8 +244,6 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 	tmp_seq[1] = (uint8_t*)calloc(l+2, 1);
 	size[0] = size_l; size[1] = size_r;
 	max_size = size_l > size_r? size_l : size_r;
-
-	Q = (ERR_RATE == 0.0)? 'I' : (int)(-10.0 * log(ERR_RATE) / log(10.0) + 0.499) + 33;
 
 	fp_fa = gzopen(fn, "r");
 	ks = kseq_init(fp_fa);
@@ -390,6 +388,7 @@ static int simu_usage()
 	fprintf(stderr, "         -X FLOAT      probability an indel is extended [%.2f]\n", INDEL_EXTEND);
 	fprintf(stderr, "         -S INT        seed for random generator [-1]\n");
 	fprintf(stderr, "         -A FLOAT      disgard if the fraction of ambiguous bases higher than FLOAT [%.2f]\n", MAX_N_RATIO);
+	fprintf(stderr, "         -Q CHAR       ASCII character encoding of Phred value using 33-based Phred scale [I]\n");
 	fprintf(stderr, "         -h            haplotype mode\n");
 	fprintf(stderr, "\n");
 	return 1;
@@ -401,10 +400,12 @@ int main(int argc, char *argv[])
 	int dist, std_dev, c, size_l, size_r, is_hap = 0;
 	FILE *fpout1, *fpout2;
 	int seed = -1;
+	char Q;
 
 	N = 1000000; dist = 500; std_dev = 50;
 	size_l = size_r = 70;
-	while ((c = getopt(argc, argv, "e:d:s:N:1:2:r:R:hX:S:A:")) >= 0) {
+	Q = 'I';
+	while ((c = getopt(argc, argv, "e:d:s:N:1:2:r:R:hX:S:A:Q:")) >= 0) {
 		switch (c) {
 		case 'd': dist = atoi(optarg); break;
 		case 's': std_dev = atoi(optarg); break;
@@ -417,6 +418,7 @@ int main(int argc, char *argv[])
 		case 'X': INDEL_EXTEND = atof(optarg); break;
 		case 'A': MAX_N_RATIO = atof(optarg); break;
 		case 'S': seed = atoi(optarg); break;
+		case 'Q': Q = optarg[0]; break;
 		case 'h': is_hap = 1; break;
 		}
 	}
@@ -430,7 +432,7 @@ int main(int argc, char *argv[])
 	if (seed <= 0) seed = time(0)&0x7fffffff;
 	fprintf(stderr, "[wgsim] seed = %d\n", seed);
 	srand48(seed);
-	wgsim_core(fpout1, fpout2, argv[optind], is_hap, N, dist, std_dev, size_l, size_r);
+	wgsim_core(fpout1, fpout2, argv[optind], is_hap, N, dist, std_dev, size_l, size_r, Q);
 
 	fclose(fpout1); fclose(fpout2);
 	return 0;
