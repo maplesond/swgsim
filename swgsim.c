@@ -40,7 +40,7 @@
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 
-#define PACKAGE_VERSION "0.3.1-r13"
+#define PACKAGE_VERSION "0.1"
 
 const uint8_t nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -373,14 +373,14 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 static int simu_usage()
 {
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Program: wgsim (short read simulator)\n");
+	fprintf(stderr, "Program: swgsim (short read simulator)\n");
 	fprintf(stderr, "Version: %s\n", PACKAGE_VERSION);
-	fprintf(stderr, "Contact: Heng Li <lh3@sanger.ac.uk>\n\n");
+	fprintf(stderr, "Contact: Shantanu Sharma (twitter: @shantanu) / Heng Li <lh3@sanger.ac.uk>\n\n");
 	fprintf(stderr, "Usage:   wgsim [options] <in.ref.fa> <out.read1.fq> <out.read2.fq>\n\n");
 	fprintf(stderr, "Options: -e FLOAT      base error rate [%.3f]\n", ERR_RATE);
 	fprintf(stderr, "         -d INT        outer distance between the two ends [500]\n");
 	fprintf(stderr, "         -s INT        standard deviation [50]\n");
-	fprintf(stderr, "         -N INT        number of read pairs [1000000]\n");
+	fprintf(stderr, "         -D INT        Depth of coverage to simulate [40]\n");
 	fprintf(stderr, "         -1 INT        length of the first read [70]\n");
 	fprintf(stderr, "         -2 INT        length of the second read [70]\n");
 	fprintf(stderr, "         -r FLOAT      rate of mutations [%.4f]\n", MUT_RATE);
@@ -389,6 +389,7 @@ static int simu_usage()
 	fprintf(stderr, "         -S INT        seed for random generator [-1]\n");
 	fprintf(stderr, "         -A FLOAT      disgard if the fraction of ambiguous bases higher than FLOAT [%.2f]\n", MAX_N_RATIO);
 	fprintf(stderr, "         -Q CHAR       ASCII character encoding of Phred value using 33-based Phred scale [I]\n");
+	fprintf(stderr, "         -G INT        Genome size: number of bases in the input fasta file\n");
 	fprintf(stderr, "         -h            haplotype mode\n");
 	fprintf(stderr, "\n");
 	return 1;
@@ -397,19 +398,22 @@ static int simu_usage()
 int main(int argc, char *argv[])
 {
 	int64_t N;
+	int64_t D;
+	int64_t G;
+
 	int dist, std_dev, c, size_l, size_r, is_hap = 0;
 	FILE *fpout1, *fpout2;
 	int seed = -1;
 	char Q;
 
-	N = 1000000; dist = 500; std_dev = 50;
+	D = 40; dist = 500; std_dev = 50;
 	size_l = size_r = 70;
 	Q = 'I';
-	while ((c = getopt(argc, argv, "e:d:s:N:1:2:r:R:hX:S:A:Q:")) >= 0) {
+	while ((c = getopt(argc, argv, "e:d:s:D:1:2:r:R:hX:S:A:Q:G:")) >= 0) {
 		switch (c) {
 		case 'd': dist = atoi(optarg); break;
 		case 's': std_dev = atoi(optarg); break;
-		case 'N': N = atoi(optarg); break;
+		case 'D': D = atoi(optarg); break;
 		case '1': size_l = atoi(optarg); break;
 		case '2': size_r = atoi(optarg); break;
 		case 'e': ERR_RATE = atof(optarg); break;
@@ -419,9 +423,14 @@ int main(int argc, char *argv[])
 		case 'A': MAX_N_RATIO = atof(optarg); break;
 		case 'S': seed = atoi(optarg); break;
 		case 'Q': Q = optarg[0]; break;
+		case 'G': G = atoi(optarg); break;
 		case 'h': is_hap = 1; break;
 		}
 	}
+
+  // Compute number of reads to generate using: coverage depth = (N x L) / G
+  N = (int)((D*G*2)/(size_l + size_r));
+
 	if (argc - optind < 3) return simu_usage();
 	fpout1 = fopen(argv[optind+1], "w");
 	fpout2 = fopen(argv[optind+2], "w");
