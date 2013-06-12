@@ -429,6 +429,7 @@ int main(int argc, char *argv[])
 	}
 
   // Compute number of reads to generate using: coverage depth = (N x L) / G
+  // (where N: number of reads - L: read length - G: genome size)
   N = (int)((D*G*2)/(size_l + size_r));
 
 	if (argc - optind < 3) return simu_usage();
