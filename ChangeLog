@@ -1,0 +1,9 @@
+ChangeLogs
+-----------
+
+2013-06-12
+Merged from https://github.com/hammer/wgsim:
+Phred quality score is now configurable using -Q argument, with a default value of 40. 
+Note from hammer: Formula for computation of Phred quality score is (-10.0 * log(ERR_RATE) / log(10.0) + 0.499) + 33 (see https://github.com/lh3/wgsim/blob/master/wgsim.c#L248).
+Because ERR_RATE is set to 0.02 by default, the quality score comes out to (-10.0 * log(0.02) / log(10.0) + 0.499) + 33 = 50.4887..., which is encoded using the character 2, which
+has the ASCII character 50.
