@@ -227,6 +227,18 @@ void wgsim_print_mutref(const char *name, const kseq_t *ks, mutseq_t *hap1, muts
 	}
 }
 
+void print_sam_header(FILE* samout, int argc, char* argv[]) {
+
+	fprintf(samout, "@HD\tSO:unsorted\n");
+	fprintf(samout, "@PG\tID:swgsim\tPN:swgsim\tVN:%s\tCL:", PACKAGE_VERSION);
+
+	int i = 0;
+	for (i = 0; i < argc; i++)
+		fprintf(samout, " %s", argv[i]);
+
+	fprintf(samout, "\n");
+}
+
 void wgsim_core(FILE *fpout1, FILE *fpout2, FILE *samout, const char *fn, int is_hap, uint64_t N, int dist, int std_dev, int size_l, int size_r, char Q)
 {
 	kseq_t *ks;
@@ -253,6 +265,7 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, FILE *samout, const char *fn, int is
 	while ((l = kseq_read(ks)) >= 0) {
 		tot_len += l;
 		++n_ref;
+                fprintf(samout, "@SQ\tSN:%s\tLN:%d\n", ks->name.s, l);
 	}
 	fprintf(stderr, "[%s] %d sequences, total length: %llu\n", __func__, n_ref, (long long)tot_len);
 	kseq_destroy(ks);
@@ -361,6 +374,14 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, FILE *samout, const char *fn, int is
 				for (i = 0; i < s[j]; ++i)
 					fputc("ACGTN"[(int)tmp_seq[j][i]], fpo[j]);
 				fprintf(fpo[j], "\n+\n%s\n", qstr);
+                                
+                                // Print to SAM
+                                fprintf(samout, "%s_%u_%u_%d:%d:%d_%d:%d:%d_%llx/%d\t%d\t%s\t%d\t255\t%dM\t*\t0\t0\t", ks->name.s, ext_coor[0]+1, ext_coor[1]+1,
+						n_err[0], n_sub[0], n_indel[0], n_err[1], n_sub[1], n_indel[1],
+						(long long)ii, j==0? is_flip+1 : 2-is_flip, j==0? 0 : 16, ks->name.s, ext_coor[0]+1, j==0? size_l : size_r);
+                                for (i = 0; i < s[j]; ++i)
+					fputc("ACGTN"[(int)tmp_seq[j][i]], samout);
+                                fprintf(samout, "\t%s\n", qstr);
 			}
 		}
 		free(rseq[0].s); free(rseq[1].s);
@@ -429,9 +450,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-  // Compute number of reads to generate using: coverage depth = (N x L) / G
-  // (where N: number of reads - L: read length - G: genome size)
-  N = (int)((D*G*2)/(size_l + size_r));
+	// Compute number of reads to generate using: coverage depth = (N x L) / G
+	// (where N: number of reads - L: read length - G: genome size)
+	N = (int)((D*G*2)/(size_l + size_r));
 
 	if (argc - optind < 3) return simu_usage();
 	fpout1 = fopen(argv[optind+1], "w");
@@ -444,6 +465,11 @@ int main(int argc, char *argv[])
 	if (seed <= 0) seed = time(0)&0x7fffffff;
 	fprintf(stderr, "[wgsim] seed = %d\n", seed);
 	srand48(seed);
+
+	// Output SAM header
+        print_sam_header(samout, argc, argv);
+
+
 	wgsim_core(fpout1, fpout2, samout, argv[optind], is_hap, N, dist, std_dev, size_l, size_r, Q);
 
 	fclose(fpout1); fclose(fpout2); fclose(samout);
