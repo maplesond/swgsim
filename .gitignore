@@ -1,1 +1,7 @@
 .*.swp
+/ccoli.sorted.bam
+/r1.fq
+/ccoli.bam
+/r2.fq
+/ccoli.sam
+/nbproject

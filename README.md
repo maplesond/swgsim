@@ -21,7 +21,7 @@ that comes with the package.
 Compilation
 ===========
 
-gcc -g -O2 -Wall -o wgsim wgsim.c -lz -lm
+Just type "make".
 
 
 History
