@@ -227,7 +227,7 @@ void wgsim_print_mutref(const char *name, const kseq_t *ks, mutseq_t *hap1, muts
 	}
 }
 
-void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t N, int dist, int std_dev, int size_l, int size_r, char Q)
+void wgsim_core(FILE *fpout1, FILE *fpout2, FILE *samout, const char *fn, int is_hap, uint64_t N, int dist, int std_dev, int size_l, int size_r, char Q)
 {
 	kseq_t *ks;
     mutseq_t rseq[2];
@@ -376,8 +376,8 @@ static int simu_usage()
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Program: swgsim (short read simulator)\n");
 	fprintf(stderr, "Version: %s\n", PACKAGE_VERSION);
-	fprintf(stderr, "Contact: Shantanu Sharma (twitter: @shantanu) / Heng Li <lh3@sanger.ac.uk>\n\n");
-	fprintf(stderr, "Usage:   wgsim [options] <in.ref.fa> <out.read1.fq> <out.read2.fq>\n\n");
+	fprintf(stderr, "Contact: Dan Mapleson <daniel.mapleson@tgac.ac.uk> / Shantanu Sharma (twitter: @shantanu) / Heng Li <lh3@sanger.ac.uk>\n\n");
+	fprintf(stderr, "Usage:   wgsim [options] <in.ref.fa> <out.read1.fq> <out.read2.fq> <out.sam>\n\n");
 	fprintf(stderr, "Options: -e FLOAT      base error rate [%.3f]\n", ERR_RATE);
 	fprintf(stderr, "         -d INT        outer distance between the two ends [500]\n");
 	fprintf(stderr, "         -s INT        standard deviation [50]\n");
@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
 	int64_t G;
 
 	int dist, std_dev, c, size_l, size_r, is_hap = 0;
-	FILE *fpout1, *fpout2;
+	FILE *fpout1, *fpout2, *samout;
 	int seed = -1;
 	char Q;
 
@@ -436,15 +436,16 @@ int main(int argc, char *argv[])
 	if (argc - optind < 3) return simu_usage();
 	fpout1 = fopen(argv[optind+1], "w");
 	fpout2 = fopen(argv[optind+2], "w");
-	if (!fpout1 || !fpout2) {
+	samout = foprn(argv[optind+3], "w");
+	if (!fpout1 || !fpout2 || !samout) {
 		fprintf(stderr, "[wgsim] file open error\n");
 		return 1;
 	}
 	if (seed <= 0) seed = time(0)&0x7fffffff;
 	fprintf(stderr, "[wgsim] seed = %d\n", seed);
 	srand48(seed);
-	wgsim_core(fpout1, fpout2, argv[optind], is_hap, N, dist, std_dev, size_l, size_r, Q);
+	wgsim_core(fpout1, fpout2, samout, argv[optind], is_hap, N, dist, std_dev, size_l, size_r, Q);
 
-	fclose(fpout1); fclose(fpout2);
+	fclose(fpout1); fclose(fpout2); fclose(samout);
 	return 0;
 }
