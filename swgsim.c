@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 	if (argc - optind < 3) return simu_usage();
 	fpout1 = fopen(argv[optind+1], "w");
 	fpout2 = fopen(argv[optind+2], "w");
-	samout = foprn(argv[optind+3], "w");
+	samout = fopen(argv[optind+3], "w");
 	if (!fpout1 || !fpout2 || !samout) {
 		fprintf(stderr, "[wgsim] file open error\n");
 		return 1;
